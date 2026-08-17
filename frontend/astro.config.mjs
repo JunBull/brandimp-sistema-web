@@ -12,7 +12,6 @@ export default defineConfig({
   integrations: [
     react(),
     sentry({
-      dsn: process.env.PUBLIC_SENTRY_DSN || "",
       sourceMapsUploadOptions: {
         telemetry: false,
       },
