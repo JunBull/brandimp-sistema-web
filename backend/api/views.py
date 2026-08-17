@@ -73,22 +73,23 @@ class LoginView(APIView):
             }
         })
         
-        # Configurar Cookies Seguras
+        # Configurar Cookies Seguras (SameSite='None' para cross-origin Vercel <-> Render en HTTPS)
         secure_cookie = getattr(settings, 'JWT_AUTH_SECURE', False)
+        samesite_val = 'None' if secure_cookie else 'Lax'
         
         response.set_cookie(
             key=getattr(settings, 'JWT_AUTH_COOKIE', 'access_token'),
             value=str(refresh.access_token),
             httponly=True,
             secure=secure_cookie,
-            samesite='Lax'
+            samesite=samesite_val
         )
         response.set_cookie(
             key=getattr(settings, 'JWT_AUTH_REFRESH_COOKIE', 'refresh_token'),
             value=str(refresh),
             httponly=True,
             secure=secure_cookie,
-            samesite='Lax'
+            samesite=samesite_val
         )
         return response
 
@@ -97,8 +98,18 @@ class LogoutView(APIView):
 
     def post(self, request):
         response = Response({"detail": "Successfully logged out."})
-        response.delete_cookie(getattr(settings, 'JWT_AUTH_COOKIE', 'access_token'))
-        response.delete_cookie(getattr(settings, 'JWT_AUTH_REFRESH_COOKIE', 'refresh_token'))
+        secure_cookie = getattr(settings, 'JWT_AUTH_SECURE', False)
+        samesite_val = 'None' if secure_cookie else 'Lax'
+        response.delete_cookie(
+            getattr(settings, 'JWT_AUTH_COOKIE', 'access_token'),
+            samesite=samesite_val,
+            secure=secure_cookie
+        )
+        response.delete_cookie(
+            getattr(settings, 'JWT_AUTH_REFRESH_COOKIE', 'refresh_token'),
+            samesite=samesite_val,
+            secure=secure_cookie
+        )
         return response
 
 class MeView(APIView):
