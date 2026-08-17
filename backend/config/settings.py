@@ -45,7 +45,8 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-g9xnh!z6f_ha1na%jxw3)5s-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+raw_hosts = env.list('ALLOWED_HOSTS', default=['*'])
+ALLOWED_HOSTS = [h.replace('*.', '.') if h.startswith('*.') else h for h in raw_hosts]
 
 
 # Application definition
