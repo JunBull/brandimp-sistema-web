@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CatalogoConfig from '../components/CatalogoConfig.tsx';
+---
+
+<Layout title="Estructura del Catálogo">
+	<div class="space-y-6 animate-fade-in">
+		<div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-default)] shadow-xs">
+			<div>
+				<h2 class="font-display font-extrabold text-2xl text-[var(--text-primary)]">Configuración del Catálogo Comercial</h2>
+				<p class="text-xs text-[var(--text-secondary)] mt-1">Crea nuevas categorías de empaques y agrega tipos de productos con sus respectivos precios base de referencia.</p>
+			</div>
+		</div>
+
+		<!-- Componente Interactivo de Parametrización en Cascada -->
+		<CatalogoConfig client:load />
+	</div>
+</Layout>

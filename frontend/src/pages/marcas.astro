@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import MarcaHistorial from '../components/MarcaHistorial.tsx';
+---
+
+<Layout title="Marcas & Historial">
+	<div class="space-y-6 animate-fade-in">
+		<div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-default)] shadow-xs">
+			<div>
+				<h2 class="font-display font-extrabold text-2xl text-[var(--text-primary)]">Marcas e Historial de Ventas</h2>
+				<p class="text-xs text-[var(--text-secondary)] mt-1">Busca y administra marcas comerciales y consulta su historial completo de cotizaciones anteriores.</p>
+			</div>
+		</div>
+
+		<!-- Componente Interactivo de Directorio e Historial de Precios -->
+		<MarcaHistorial client:load />
+	</div>
+</Layout>

@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CuentasPorCobrar from '../components/CuentasPorCobrar.tsx';
+---
+
+<Layout title="Cuentas por Cobrar">
+	<div class="space-y-6 animate-fade-in">
+		<div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-default)] shadow-xs">
+			<div>
+				<h2 class="font-display font-extrabold text-2xl text-[var(--text-primary)]">Módulo de Cuentas por Cobrar</h2>
+				<p class="text-xs text-[var(--text-secondary)] mt-1">Monitorea los saldos pendientes de tus pedidos y registra abonos parciales o amortizaciones.</p>
+			</div>
+		</div>
+
+		<!-- Componente interactivo de Cuentas por Cobrar -->
+		<CuentasPorCobrar client:load />
+	</div>
+</Layout>

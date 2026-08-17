@@ -1,0 +1,8 @@
+django>=5.0,<6.0
+djangorestframework
+djangorestframework-simplejwt
+psycopg2-binary
+django-cors-headers
+django-environ
+sentry-sdk
+gunicorn

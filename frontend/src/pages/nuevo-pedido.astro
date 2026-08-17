@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NuevaOrdenForm from '../components/NuevaOrdenForm.tsx';
+---
+
+<Layout title="Nuevo Pedido">
+	<div class="space-y-6 animate-fade-in">
+		<div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-[var(--bg-surface)] p-6 rounded-2xl border border-[var(--border-default)] shadow-xs">
+			<div>
+				<h2 class="font-display font-extrabold text-2xl text-[var(--text-primary)]">Generar Cotización y Pedido</h2>
+				<p class="text-xs text-[var(--text-secondary)] mt-1">Crea una nueva orden de empaques o branding, negocia el precio final y carga los archivos de diseño.</p>
+			</div>
+		</div>
+
+		<!-- Componente Interactivo de Formulario de Pedido -->
+		<NuevaOrdenForm client:load />
+	</div>
+</Layout>

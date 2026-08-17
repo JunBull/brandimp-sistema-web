@@ -1,0 +1,74 @@
+---
+import '../styles/global.css';
+import { LoginForm } from '../components/LoginForm.tsx';
+---
+
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/logo.svg?v=brandimp" />
+		<link rel="shortcut icon" type="image/svg+xml" href="/logo.svg?v=brandimp" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=brandimp" />
+		<title>Iniciar Sesión - Brandimp Operaciones</title>
+		<!-- Content Security Policy (CSP) -->
+		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:8000 https: https://*.supabase.co https://*.sentry.io https://*.ingest.sentry.io;" />
+		<script is:inline>
+			const theme = localStorage.getItem('theme') || 'dark';
+			if (theme === 'dark') document.documentElement.classList.add('dark');
+			else document.documentElement.classList.remove('dark');
+
+			// Si ya tiene sesión activa, redirigir automáticamente al dashboard
+			if (typeof window !== 'undefined' && localStorage.getItem('brandimp_user')) {
+				window.location.href = '/';
+			}
+		</script>
+	</head>
+	<body class="bg-[var(--bg-base)] text-[var(--text-primary)] font-sans min-h-screen relative flex flex-col items-center justify-between p-4 sm:p-6 transition-colors duration-200 selection:bg-brand-turquoise selection:text-white overflow-x-hidden">
+		
+		<!-- Ambient Glow Background Orbs (Sutiles y equilibrados) -->
+		<div class="fixed inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
+			<div class="absolute -top-32 -left-32 w-80 h-80 sm:w-96 sm:h-96 bg-brand-turquoise/15 dark:bg-brand-turquoise/10 rounded-full blur-3xl"></div>
+			<div class="absolute -bottom-32 -right-32 w-80 h-80 sm:w-96 sm:h-96 bg-brand-lavender/15 dark:bg-brand-lavender/10 rounded-full blur-3xl"></div>
+			<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] bg-brand-peach/10 dark:bg-brand-peach/[0.03] rounded-full blur-3xl"></div>
+		</div>
+
+		<!-- Top Bar: Selector de Tema -->
+		<header class="w-full max-w-md flex justify-end items-center py-2">
+			<button 
+				id="theme-toggle-btn"
+				class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] hover:bg-[var(--bg-muted)] border border-[var(--border-default)] shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-turquoise/40"
+				aria-label="Cambiar tema de color"
+			>
+				<span class="theme-icon-light hidden dark:inline-flex items-center gap-1.5">
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-400"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+					Modo Claro
+				</span>
+				<span class="theme-icon-dark inline-flex dark:hidden items-center gap-1.5">
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+					Modo Oscuro
+				</span>
+			</button>
+		</header>
+
+		<!-- Contenedor Principal del Formulario -->
+		<main class="w-full flex-1 flex items-center justify-center my-auto py-4">
+			<LoginForm client:load />
+		</main>
+
+		<!-- Pie de Página Discreto -->
+		<footer class="w-full text-center py-3 text-[11px] text-[var(--text-muted)]">
+			<p>© 2026 Brandimp • Sistema de Operaciones y Flujo Comercial</p>
+		</footer>
+
+		<script is:inline>
+			const toggleBtn = document.getElementById('theme-toggle-btn');
+			toggleBtn?.addEventListener('click', () => {
+				const html = document.documentElement;
+				html.classList.toggle('dark');
+				localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+			});
+		</script>
+	</body>
+</html>
