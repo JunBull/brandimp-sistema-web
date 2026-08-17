@@ -150,6 +150,16 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     serializer_class = CategoriaSerializer
     permission_classes = [CatalogoPermission]
 
+    @action(detail=False, methods=['get'], url_path='todos-completos')
+    def todos_completos(self, request):
+        categorias = Categoria.objects.prefetch_related(
+            Prefetch('productos', queryset=TipoProducto.objects.prefetch_related('tamanos_rel', 'colores_rel')),
+            'tamanos',
+            'colores'
+        ).all().order_by('nombre')
+        serializer = CatalogoCompletoSerializer(categorias, many=True, context={'request': request})
+        return Response(serializer.data)
+
     @action(detail=True, methods=['get'], url_path='completo')
     def completo(self, request, pk=None):
         try:

@@ -96,22 +96,22 @@ export default function CatalogoConfig() {
   const fetchCatalogo = async () => {
     try {
       setLoading(true);
-      const categoriasRaw = await apiFetch('/categorias/');
-      const fullCatalogo: Categoria[] = [];
-
-      for (const cat of (Array.isArray(categoriasRaw) ? categoriasRaw : [])) {
-        try {
-          const catComp = await apiFetch(`/categorias/${cat.id}/completo/`);
-          fullCatalogo.push(catComp);
-        } catch (e) {
-          fullCatalogo.push({ ...cat, productos: [], tamanos: [], colores: [] });
-        }
-      }
-
-      setCatalogo(fullCatalogo);
+      const data = await apiFetch<Categoria[]>('/categorias/todos-completos/');
+      setCatalogo(Array.isArray(data) ? data : []);
     } catch (e) {
-      setCatalogo([]);
-      showToast({ type: 'error', title: 'Error', message: 'No se pudo conectar con el catálogo del servidor.' });
+      // Fallback en caso de error
+      try {
+        const categoriasRaw = await apiFetch<Categoria[]>('/categorias/');
+        const fullCatalogo = await Promise.all(
+          (Array.isArray(categoriasRaw) ? categoriasRaw : []).map(cat =>
+            apiFetch<Categoria>(`/categorias/${cat.id}/completo/`).catch(() => ({ ...cat, productos: [], tamanos: [], colores: [] }))
+          )
+        );
+        setCatalogo(fullCatalogo);
+      } catch (err) {
+        setCatalogo([]);
+        showToast({ type: 'error', title: 'Error', message: 'No se pudo conectar con el catálogo del servidor.' });
+      }
     } finally {
       setLoading(false);
     }

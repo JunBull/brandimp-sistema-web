@@ -173,22 +173,21 @@ export default function NuevaOrdenForm() {
     const initData = async () => {
       try {
         setLoading(true);
-        const marcasData = await apiFetch('/marcas/');
-        const categoriasRaw = await apiFetch('/categorias/');
+        const [marcasData, catalogoData] = await Promise.all([
+          apiFetch<Marca[]>('/marcas/').catch(() => []),
+          apiFetch<Categoria[]>('/categorias/todos-completos/').catch(async () => {
+            // Fallback
+            const cats = await apiFetch<Categoria[]>('/categorias/').catch(() => []);
+            return Promise.all(
+              (Array.isArray(cats) ? cats : []).map(cat =>
+                apiFetch<Categoria>(`/categorias/${cat.id}/completo/`).catch(() => ({ ...cat, productos: [], tamanos: [], colores: [] }))
+              )
+            );
+          })
+        ]);
         
-        setMarcas(marcasData);
-        const fullCatalogo: Categoria[] = [];
-
-        for (const cat of categoriasRaw) {
-          try {
-            const compData = await apiFetch(`/categorias/${cat.id}/completo/`);
-            fullCatalogo.push(compData);
-          } catch (e) {
-            fullCatalogo.push({ ...cat, productos: [], tamanos: [], colores: [] });
-          }
-        }
-
-        setCatalogo(fullCatalogo);
+        setMarcas(Array.isArray(marcasData) ? marcasData : []);
+        setCatalogo(Array.isArray(catalogoData) ? catalogoData : []);
       } catch (e) {
         console.error('Error al conectar con la API backend:', e);
       } finally {
