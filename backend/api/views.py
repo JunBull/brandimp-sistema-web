@@ -473,7 +473,9 @@ class DashboardView(APIView):
         contadores_raw = Pedido.objects.values('estado_actual').annotate(total=Count('id'))
         contadores = {e.value: 0 for e in EstadoProduccion}
         for item in contadores_raw:
-            contadores[item['estado_actual']] = item['total']
+            estado = item.get('estado_actual')
+            if estado in contadores:
+                contadores[estado] = item.get('total', 0)
 
         pedidos_hoy = Pedido.objects.filter(created_at__date=hoy).count()
         pedidos_urgentes_qs = Pedido.objects.exclude(
