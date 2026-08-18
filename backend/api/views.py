@@ -32,7 +32,8 @@ from .serializers import (
 )
 from .permissions import (
     get_user_rol, IsAdminUserRole, IsVendedorUserRole,
-    CatalogoPermission, MarcaPermission, PedidoPermission, CuentasPorCobrarPermission
+    CatalogoPermission, TamanoColorPermission, TipoProductoPermission,
+    MarcaPermission, PedidoPermission, CuentasPorCobrarPermission
 )
 
 class LoginView(APIView):
@@ -176,7 +177,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
 class TipoProductoViewSet(viewsets.ModelViewSet):
     queryset = TipoProducto.objects.all().prefetch_related('tamanos_rel', 'colores_rel')
     serializer_class = TipoProductoSerializer
-    permission_classes = [CatalogoPermission]
+    permission_classes = [TipoProductoPermission]
     filterset_fields = ['categoria']
 
     def destroy(self, request, *args, **kwargs):
@@ -230,14 +231,44 @@ class TipoProductoViewSet(viewsets.ModelViewSet):
 class TamanoViewSet(viewsets.ModelViewSet):
     queryset = Tamano.objects.all()
     serializer_class = TamanoSerializer
-    permission_classes = [CatalogoPermission]
+    permission_classes = [TamanoColorPermission]
     filterset_fields = ['categoria']
+
+    def update(self, request, *args, **kwargs):
+        if get_user_rol(request.user) != 'ADMIN':
+            return Response({'error': 'Solo el Administrador puede editar tamaños existentes.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if get_user_rol(request.user) != 'ADMIN':
+            return Response({'error': 'Solo el Administrador puede editar tamaños existentes.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if get_user_rol(request.user) != 'ADMIN':
+            return Response({'error': 'Solo el Administrador puede eliminar tamaños.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
 class ColorProductoViewSet(viewsets.ModelViewSet):
     queryset = ColorProducto.objects.all()
     serializer_class = ColorProductoSerializer
-    permission_classes = [CatalogoPermission]
+    permission_classes = [TamanoColorPermission]
     filterset_fields = ['categoria']
+
+    def update(self, request, *args, **kwargs):
+        if get_user_rol(request.user) != 'ADMIN':
+            return Response({'error': 'Solo el Administrador puede editar colores existentes.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if get_user_rol(request.user) != 'ADMIN':
+            return Response({'error': 'Solo el Administrador puede editar colores existentes.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if get_user_rol(request.user) != 'ADMIN':
+            return Response({'error': 'Solo el Administrador puede eliminar colores.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
 class MarcaViewSet(viewsets.ModelViewSet):
     queryset = Marca.objects.all()

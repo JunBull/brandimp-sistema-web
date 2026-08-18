@@ -77,3 +77,66 @@ class AuthAndRBACTest(TestCase):
         # Attempt rewind to Registrado
         response = self.client.patch(f'/api/pedidos/{self.pedido.id}/cambiar-estado/', {'estado': 'Registrado'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_vendedor_can_create_tamano_and_color(self):
+        from api.models import Categoria, TipoProducto
+        cat = Categoria.objects.create(nombre="Bolsas Ecológicas")
+        prod = TipoProducto.objects.create(categoria=cat, nombre="Bolsa Notex", precio_millar=150.00)
+        
+        self.client.force_authenticate(user=self.vendedor_user)
+
+        # 1. Vendedor crea nuevo tamaño
+        resp_tam = self.client.post('/api/tamanos/', {
+            'categoria': str(cat.id),
+            'nombre': '15x25',
+            'unidad_medida': 'pulgadas',
+            'orden': 0
+        }, format='json')
+        self.assertEqual(resp_tam.status_code, status.HTTP_201_CREATED)
+        tam_id = resp_tam.json()['id']
+
+        # 2. Vendedor crea nuevo color
+        resp_col = self.client.post('/api/colores-producto/', {
+            'categoria': str(cat.id),
+            'nombre': 'Verde Olivo',
+            'codigo_hex': '#556B2F',
+            'orden': 0
+        }, format='json')
+        self.assertEqual(resp_col.status_code, status.HTTP_201_CREATED)
+        col_id = resp_col.json()['id']
+
+        # 3. Vendedor guarda asignaciones al producto
+        resp_asig = self.client.post(f'/api/tipos-producto/{prod.id}/guardar-asignaciones/', {
+            'tamanos_ids': [tam_id],
+            'colores_ids': [col_id]
+        }, format='json')
+        self.assertEqual(resp_asig.status_code, status.HTTP_200_OK)
+
+        # 4. Vendedor no puede eliminar tamaño ni producto
+        resp_del_tam = self.client.delete(f'/api/tamanos/{tam_id}/')
+        self.assertEqual(resp_del_tam.status_code, status.HTTP_403_FORBIDDEN)
+
+        resp_del_prod = self.client.delete(f'/api/tipos-producto/{prod.id}/')
+        self.assertEqual(resp_del_prod.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_operario_cannot_create_tamano_or_color(self):
+        from api.models import Categoria
+        cat = Categoria.objects.create(nombre="Etiquetas")
+        self.client.force_authenticate(user=self.operario_user)
+
+        resp_tam = self.client.post('/api/tamanos/', {
+            'categoria': str(cat.id),
+            'nombre': '2x5',
+            'unidad_medida': 'cm',
+            'orden': 0
+        }, format='json')
+        self.assertEqual(resp_tam.status_code, status.HTTP_403_FORBIDDEN)
+
+        resp_col = self.client.post('/api/colores-producto/', {
+            'categoria': str(cat.id),
+            'nombre': 'Dorado',
+            'codigo_hex': '#D4AF37',
+            'orden': 0
+        }, format='json')
+        self.assertEqual(resp_col.status_code, status.HTTP_403_FORBIDDEN)
+

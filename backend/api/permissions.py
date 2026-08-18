@@ -25,8 +25,8 @@ class IsVendedorUserRole(permissions.BasePermission):
 
 class CatalogoPermission(permissions.BasePermission):
     """
-    Solo el ADMIN puede ver y editar el catálogo directamente.
-    Vendedores leen productos vía creación de pedidos.
+    Solo el ADMIN puede ver y editar categorías directamente.
+    Vendedores leen productos y catálogo.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -36,6 +36,45 @@ class CatalogoPermission(permissions.BasePermission):
             return True
         if rol == 'VENDEDOR' and request.method in permissions.SAFE_METHODS:
             return True
+        return False
+
+class TamanoColorPermission(permissions.BasePermission):
+    """
+    Admin: Todo (GET, POST, PUT, PATCH, DELETE).
+    Vendedor: GET (lectura) y POST (crear nuevos tamaños o colores en catálogo). No PUT, PATCH, DELETE.
+    Operario: Ninguno.
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        rol = get_user_rol(request.user)
+        if rol == 'ADMIN':
+            return True
+        if rol == 'VENDEDOR':
+            if request.method in permissions.SAFE_METHODS or request.method == 'POST':
+                return True
+            return False
+        return False
+
+class TipoProductoPermission(permissions.BasePermission):
+    """
+    Admin: Todo.
+    Vendedor: GET (lectura) y POST exclusivamente a la acción 'guardar-asignaciones'.
+              No puede crear productos, ni PUT, PATCH, DELETE.
+    Operario: Ninguno.
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        rol = get_user_rol(request.user)
+        if rol == 'ADMIN':
+            return True
+        if rol == 'VENDEDOR':
+            if request.method in permissions.SAFE_METHODS:
+                return True
+            if getattr(view, 'action', None) == 'guardar_asignaciones' and request.method == 'POST':
+                return True
+            return False
         return False
 
 class MarcaPermission(permissions.BasePermission):

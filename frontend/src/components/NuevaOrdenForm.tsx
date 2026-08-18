@@ -242,18 +242,12 @@ export default function NuevaOrdenForm() {
 
   const tamanosDisponibles = React.useMemo(() => {
     if (!catActual || !prodActual) return [];
-    if (prodActual.tamanos_asignados && prodActual.tamanos_asignados.length > 0) {
-      return (catActual.tamanos || []).filter(t => prodActual.tamanos_asignados!.includes(t.id));
-    }
-    return catActual.tamanos || [];
+    return (catActual.tamanos || []).filter(t => (prodActual.tamanos_asignados || []).includes(t.id));
   }, [catActual, prodActual]);
 
   const coloresDisponibles = React.useMemo(() => {
     if (!catActual || !prodActual) return [];
-    if (prodActual.colores_asignados && prodActual.colores_asignados.length > 0) {
-      return (catActual.colores || []).filter(c => prodActual.colores_asignados!.includes(c.id));
-    }
-    return catActual.colores || [];
+    return (catActual.colores || []).filter(c => (prodActual.colores_asignados || []).includes(c.id));
   }, [catActual, prodActual]);
 
   const esCategoriaCuero = catActual?.nombre.toLowerCase().includes('cuero') || false;
@@ -356,22 +350,28 @@ export default function NuevaOrdenForm() {
   };
 
   const handleAsignarDimensionColorExistente = async (tipo: 'tamano' | 'color', itemId: string) => {
-    if (!catActual || !prodActual) return;
+    if (!catActual || !prodActual) {
+      showToast({
+        type: 'warning',
+        title: 'Selecciona un Producto',
+        message: 'Debes seleccionar un tipo de producto antes de asignar dimensiones o colores.'
+      });
+      return;
+    }
 
-    const currentLen = tipo === 'tamano' ? tamanosDisponibles.length : coloresDisponibles.length;
-
-    let updatedTamanoIds = (prodActual.tamanos_asignados && prodActual.tamanos_asignados.length > 0)
-      ? [...prodActual.tamanos_asignados]
-      : (catActual.tamanos || []).map(t => t.id);
-
-    let updatedColorIds = (prodActual.colores_asignados && prodActual.colores_asignados.length > 0)
-      ? [...prodActual.colores_asignados]
-      : (catActual.colores || []).map(c => c.id);
+    let updatedTamanoIds: string[];
+    let updatedColorIds: string[];
 
     if (tipo === 'tamano') {
-      updatedTamanoIds = [...new Set([...updatedTamanoIds, itemId])];
+      updatedTamanoIds = (prodActual.tamanos_asignados && prodActual.tamanos_asignados.length > 0)
+        ? [...new Set([...prodActual.tamanos_asignados, itemId])]
+        : [itemId];
+      updatedColorIds = prodActual.colores_asignados ? [...prodActual.colores_asignados] : [];
     } else {
-      updatedColorIds = [...new Set([...updatedColorIds, itemId])];
+      updatedColorIds = (prodActual.colores_asignados && prodActual.colores_asignados.length > 0)
+        ? [...new Set([...prodActual.colores_asignados, itemId])]
+        : [itemId];
+      updatedTamanoIds = prodActual.tamanos_asignados ? [...prodActual.tamanos_asignados] : [];
     }
 
     try {
@@ -402,8 +402,8 @@ export default function NuevaOrdenForm() {
 
       showToast({ 
         type: 'success', 
-        title: 'Asignación Guardada en BD', 
-        message: 'Se vinculó la opción al producto en la base de datos.' 
+        title: 'Asignación Guardada', 
+        message: 'Se vinculó la opción al producto correctamente.' 
       });
 
       if (tipo === 'tamano') {
@@ -413,12 +413,12 @@ export default function NuevaOrdenForm() {
         setSelectedColorId(itemId);
         setIsColorModalOpen(false);
       }
-    } catch (e) {
-      console.error('Error al guardar asignación en BD:', e);
+    } catch (e: any) {
+      console.error('Error al guardar asignación:', e);
       showToast({ 
         type: 'error', 
         title: 'Error al Guardar', 
-        message: 'No se pudo guardar la asignación en la base de datos.' 
+        message: e.message || 'No se pudo guardar la asignación en la base de datos.' 
       });
     }
   };
@@ -433,17 +433,55 @@ export default function NuevaOrdenForm() {
       });
       return;
     }
-    setGuardandoDimCol(true);
     
     const catActualId = catActual?.id;
     const prodActualId = prodActual?.id;
     if (!catActualId || !prodActualId) {
-      setGuardandoDimCol(false);
+      showToast({
+        type: 'warning',
+        title: 'Selecciona un Producto',
+        message: 'Debes seleccionar un tipo de producto antes de crear dimensiones o colores.'
+      });
       return;
     }
 
+    // 1. Detección y reutilización inteligente si ya existe en la categoría
+    if (tipo === 'color') {
+      const colorExistente = (catActual.colores || []).find(
+        c => c.nombre.toLowerCase().trim() === nombre.toLowerCase()
+      );
+      if (colorExistente) {
+        await handleAsignarDimensionColorExistente('color', colorExistente.id);
+        setNuevoColorNombre('');
+        setNuevoColorHex('#59BFCB');
+        showToast({
+          type: 'info',
+          title: 'Color Existente Vinculado',
+          message: `El color "${colorExistente.nombre}" ya existía en la categoría y fue vinculado a este producto.`
+        });
+        return;
+      }
+    } else {
+      const tamanoExistente = (catActual.tamanos || []).find(
+        t => t.nombre.toLowerCase().trim() === nombre.toLowerCase() && t.unidad_medida.toLowerCase().trim() === nuevoTamanoUnidad.toLowerCase().trim()
+      );
+      if (tamanoExistente) {
+        await handleAsignarDimensionColorExistente('tamano', tamanoExistente.id);
+        setNuevoTamanoNombre('');
+        setNuevoTamanoUnidad('pulgadas');
+        showToast({
+          type: 'info',
+          title: 'Dimensión Existente Vinculada',
+          message: `La dimensión "${tamanoExistente.nombre} (${tamanoExistente.unidad_medida})" ya existía en la categoría y fue vinculada a este producto.`
+        });
+        return;
+      }
+    }
+
+    setGuardandoDimCol(true);
+
     try {
-      const endpoint = tipo === 'tamano' ? '/tamanos/' : '/colores_producto/';
+      const endpoint = tipo === 'tamano' ? '/tamanos/' : '/colores-producto/';
       const body = tipo === 'tamano' 
         ? { categoria: catActualId, nombre, unidad_medida: nuevoTamanoUnidad, orden: 0 }
         : { categoria: catActualId, nombre, codigo_hex: nuevoColorHex, orden: 0 };
@@ -453,18 +491,19 @@ export default function NuevaOrdenForm() {
         body: JSON.stringify(body)
       });
 
-      let updatedTamanoIds = (prodActual.tamanos_asignados && prodActual.tamanos_asignados.length > 0)
-        ? [...prodActual.tamanos_asignados]
-        : (catActual.tamanos || []).map(t => t.id);
-
-      let updatedColorIds = (prodActual.colores_asignados && prodActual.colores_asignados.length > 0)
-        ? [...prodActual.colores_asignados]
-        : (catActual.colores || []).map(c => c.id);
+      let updatedTamanoIds: string[];
+      let updatedColorIds: string[];
 
       if (tipo === 'tamano') {
-        updatedTamanoIds = [...new Set([...updatedTamanoIds, respItem.id])];
+        updatedTamanoIds = (prodActual.tamanos_asignados && prodActual.tamanos_asignados.length > 0)
+          ? [...new Set([...prodActual.tamanos_asignados, respItem.id])]
+          : [respItem.id];
+        updatedColorIds = prodActual.colores_asignados ? [...prodActual.colores_asignados] : [];
       } else {
-        updatedColorIds = [...new Set([...updatedColorIds, respItem.id])];
+        updatedColorIds = (prodActual.colores_asignados && prodActual.colores_asignados.length > 0)
+          ? [...new Set([...prodActual.colores_asignados, respItem.id])]
+          : [respItem.id];
+        updatedTamanoIds = prodActual.tamanos_asignados ? [...prodActual.tamanos_asignados] : [];
       }
 
       await apiFetch(`/tipos-producto/${prodActualId}/guardar-asignaciones/`, {
@@ -522,9 +561,13 @@ export default function NuevaOrdenForm() {
           message: `Color "${respItem.nombre}" creado y seleccionado.` 
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error al crear registro:', err);
-      showToast({ type: 'error', title: 'Error al Guardar', message: 'No se pudo guardar la nueva opción en el servidor.' });
+      showToast({ 
+        type: 'error', 
+        title: 'Error al Guardar', 
+        message: err.message || 'No se pudo guardar la nueva opción en el servidor.' 
+      });
     } finally {
       setGuardandoDimCol(false);
     }
@@ -1001,9 +1044,20 @@ export default function NuevaOrdenForm() {
                           </select>
                           <button
                             type="button"
-                            onClick={() => { setFiltroDimCol(''); setIsDimModalOpen(true); }}
+                            onClick={() => {
+                              if (selectedProdIdx < 0) {
+                                showToast({
+                                  type: 'warning',
+                                  title: 'Selecciona un Producto',
+                                  message: 'Por favor selecciona un tipo de producto antes de gestionar tamaños.'
+                                });
+                                return;
+                              }
+                              setFiltroDimCol('');
+                              setIsDimModalOpen(true);
+                            }}
                             className="w-9 h-9 flex items-center justify-center bg-[#59BFCB]/10 text-[#59BFCB] rounded-xl hover:bg-[#59BFCB]/20 transition-colors border border-[#59BFCB]/30 shrink-0"
-                            title="Agregar / Asignar Tamaño"
+                            title={selectedProdIdx < 0 ? "Selecciona un producto primero" : "Agregar / Asignar Tamaño"}
                           >
                             <Plus className="w-4 h-4" />
                           </button>
@@ -1027,9 +1081,20 @@ export default function NuevaOrdenForm() {
                           </select>
                           <button
                             type="button"
-                            onClick={() => { setFiltroDimCol(''); setIsColorModalOpen(true); }}
+                            onClick={() => {
+                              if (selectedProdIdx < 0) {
+                                showToast({
+                                  type: 'warning',
+                                  title: 'Selecciona un Producto',
+                                  message: 'Por favor selecciona un tipo de producto antes de gestionar colores.'
+                                });
+                                return;
+                              }
+                              setFiltroDimCol('');
+                              setIsColorModalOpen(true);
+                            }}
                             className="w-9 h-9 flex items-center justify-center bg-[#59BFCB]/10 text-[#59BFCB] rounded-xl hover:bg-[#59BFCB]/20 transition-colors border border-[#59BFCB]/30 shrink-0"
-                            title="Agregar / Asignar Color"
+                            title={selectedProdIdx < 0 ? "Selecciona un producto primero" : "Agregar / Asignar Color"}
                           >
                             <Plus className="w-4 h-4" />
                           </button>
